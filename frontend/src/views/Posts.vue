@@ -1,135 +1,70 @@
 <template>
-  <div class="container">
-    <h1>📋 To-Do List Real CRUD</h1>
-
-    <div class="input-section">
-      <input v-model="newTitle" placeholder="Tulis kegiatan baru..." />
-      <button @click="addPost">Tambah</button>
-    </div>
-
-    <table>
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>Judul</th>
-          <th>Status</th>
-          <th>Aksi</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="post in posts" :key="post.id">
-          <td>{{ post.id }}</td>
-          <td>{{ post.title }}</td>
-          <td>
-            <span :class="post.status">{{ post.status }}</span>
-          </td>
-          <td>
-            <button @click="editPost(post.id)">✏️ Edit</button>
-            <button @click="removePost(post.id)">🗑️ Hapus</button>
-            <button @click="markDone(post.id)" v-if="post.status !== 'done'">✅ Selesai</button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
+<div>
+<h1>Posts</h1>
+<ul>
+<li v-for="post in posts" :key="post.id">
+{{ post.title }}
+<button @click="editPost(post.id)">Edit</button>
+<button @click="removePost(post.id)">Delete</button>
+</li>
+</ul>
+<input v-model="newTitle" placeholder="New post title" />
+<button @click="addPost">Add Post</button>
+</div>
 </template>
-
 <script>
 import { ref, onMounted } from 'vue';
-import { getPosts, createPost, updatePost, patchPost, deletePost } from '../services/api';
-
+import { getPosts, createPost, updatePost, deletePost } from
+'../services/api';
 export default {
-  setup() {
-    const posts = ref([]);
-    const newTitle = ref('');
-
-    const fetchPosts = async () => {
-      try {
-        const res = await getPosts();
-        posts.value = res.data;
-      } catch (err) {
-        console.error('Gagal mengambil data:', err);
-      }
-    };
-
-    const addPost = async () => {
-      if (!newTitle.value.trim()) return alert('Judul tidak boleh kosong!');
-      await createPost({ title: newTitle.value });
-      newTitle.value = '';
-      fetchPosts();
-    };
-
-    const editPost = async (id) => {
-      const title = prompt('Masukkan judul baru:');
-      if (!title) return;
-      await updatePost(id, { title, status: 'pending' });
-      fetchPosts();
-    };
-
-    const markDone = async (id) => {
-      await patchPost(id, { status: 'done' });
-      fetchPosts();
-    };
-
-    const removePost = async (id) => {
-      if (confirm('Yakin ingin menghapus data ini?')) {
-        await deletePost(id);
-        fetchPosts();
-      }
-    };
-
-    onMounted(fetchPosts);
-
-    return { posts, newTitle, addPost, editPost, markDone, removePost };
-  },
+setup() {
+const posts = ref([]);
+const newTitle = ref('');
+// GET: ambil semua post
+const fetchPosts = async () => {
+try {
+const res = await getPosts();
+posts.value = res.data; // pastikan API mengembalikan array
+} catch (err) {
+console.error(err);
+}
 };
-</script>
+// POST: tambah post baru
+const addPost = async () => {
+if (!newTitle.value) return;
+try {
+await createPost({ title: newTitle.value });
+newTitle.value = '';
+fetchPosts();
+} catch (err) {
+console.error(err);
+}
+};
+// PUT/PATCH: edit post
+const editPost = async (id) => {
+const updatedTitle = prompt('Enter new title:');
+if (!updatedTitle) return;
 
-<style scoped>
-.container {
-  max-width: 700px;
-  margin: 40px auto;
-  text-align: center;
-  font-family: "Quicksand", sans-serif;
+try {
+// bisa pakai updatePost (PUT) atau patchPost (PATCH)
+await updatePost(id, { title: updatedTitle });
+fetchPosts();
+} catch (err) {
+console.error(err);
 }
-input {
-  padding: 8px;
-  width: 60%;
-  border: 1px solid #ccc;
-  border-radius: 6px;
+};
+// DELETE: hapus post
+const removePost = async (id) => {
+if (!confirm('Are you sure you want to delete this post?')) return;
+try {
+await deletePost(id);
+fetchPosts();
+} catch (err) {
+console.error(err);
 }
-button {
-  margin-left: 8px;
-  background-color: #42b883;
-  color: white;
-  border: none;
-  padding: 8px 12px;
-  border-radius: 6px;
-  cursor: pointer;
+};
+onMounted(fetchPosts);
+return { posts, newTitle, addPost, editPost, removePost };
 }
-button:hover {
-  background-color: #2c9c6a;
 }
-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 20px;
-}
-th {
-  background: #42b883;
-  color: white;
-  padding: 8px;
-}
-td {
-  border: 1px solid #ccc;
-  padding: 8px;
-}
-.done {
-  color: green;
-  font-weight: bold;
-}
-.pending {
-  color: orange;
-  font-weight: bold;
-}
-</style>
+</script>
